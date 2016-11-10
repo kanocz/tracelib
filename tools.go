@@ -32,7 +32,10 @@ func AggregateMulti(hops [][]Hop) [][]MHop {
 		timesum := map[string]time.Duration{}
 
 		for _, h := range hop {
-			addrstring := h.Addr.String()
+			var addrstring string
+			if nil != h.Addr {
+				addrstring = h.Addr.String()
+			}
 
 			var (
 				mhop MHop
