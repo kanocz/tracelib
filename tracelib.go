@@ -86,6 +86,80 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int) ([]H
 	return hops, nil
 }
 
+// RunMultiTrace preforms traceroute to specified host testing each hop several times
+func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, rounds int) ([][]Hop, error) {
+	hops := make([][]Hop, 0, maxttl)
+
+	var res trace
+	var err error
+
+	addrList, err := net.LookupIP(host)
+	if nil != err {
+		return nil, err
+	}
+
+	for _, addr := range addrList {
+		if addr.To4() != nil {
+			res.dest, err = net.ResolveIPAddr("ip4:icmp", addr.String())
+			break
+		}
+	}
+	if nil == res.dest {
+		return nil, errors.New("Unable to resolve destination host")
+	}
+
+	res.maxrtt = maxrtt
+	res.maxttl = maxttl
+	res.id = rand.Int() % 0x7fff
+	res.msg = icmp.Message{Type: ipv4.ICMPTypeEcho, Code: 0, Body: &icmp.Echo{ID: res.id, Seq: 1}}
+	res.netmsg, err = res.msg.Marshal(nil)
+
+	if nil != err {
+		return nil, err
+	}
+
+	res.conn, err = net.ListenPacket("ip4:icmp", source)
+	if nil != err {
+		return nil, err
+	}
+	defer res.conn.Close()
+
+	res.ipv4conn = ipv4.NewPacketConn(res.conn)
+	defer res.ipv4conn.Close()
+
+	hostnameCache := map[string]string{}
+
+	for i := 1; i <= maxttl; i++ {
+		thisHops := make([]Hop, 0, rounds)
+		isFinal := false
+
+		for j := 0; j < rounds; j++ {
+			next := res.Step(i)
+			if nil != next.Addr {
+				addrString := next.Addr.String()
+				if _, ok := hostnameCache[addrString]; !ok {
+					addrs, _ := net.LookupAddr(addrString)
+					if len(addrs) > 0 {
+						hostnameCache[addrString] = addrs[0]
+					} else {
+						hostnameCache[addrString] = ""
+					}
+				}
+
+				next.Host = hostnameCache[addrString]
+			}
+			thisHops = append(thisHops, next)
+			isFinal = next.Final || isFinal
+		}
+		hops = append(hops, thisHops)
+		if isFinal {
+			break
+		}
+	}
+
+	return hops, nil
+}
+
 // Hop represents each hop of trace
 type Hop struct {
 	Addr    net.Addr
