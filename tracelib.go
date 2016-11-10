@@ -29,7 +29,7 @@ type trace struct {
 }
 
 // RunTrace preforms traceroute to specified host
-func RunTrace(host string, source string, maxrtt time.Duration, maxttl int) ([]Hop, error) {
+func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, lookupAS bool) ([]Hop, error) {
 	hops := make([]Hop, 0, maxttl)
 
 	var res trace
@@ -76,6 +76,9 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int) ([]H
 			if len(addrs) > 0 {
 				next.Host = addrs[0]
 			}
+			if lookupAS {
+				next.AS = LookupAS(next.Addr.String())
+			}
 		}
 		hops = append(hops, next)
 		if next.Final {
@@ -87,7 +90,7 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int) ([]H
 }
 
 // RunMultiTrace preforms traceroute to specified host testing each hop several times
-func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, rounds int) ([][]Hop, error) {
+func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, lookupAS bool, rounds int) ([][]Hop, error) {
 	hops := make([][]Hop, 0, maxttl)
 
 	var res trace
@@ -128,6 +131,7 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 	defer res.ipv4conn.Close()
 
 	hostnameCache := map[string]string{}
+	asCache := map[string]int64{}
 
 	for i := 1; i <= maxttl; i++ {
 		thisHops := make([]Hop, 0, rounds)
@@ -144,9 +148,15 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 					} else {
 						hostnameCache[addrString] = ""
 					}
+					if lookupAS {
+						asCache[addrString] = LookupAS(addrString)
+					}
 				}
 
 				next.Host = hostnameCache[addrString]
+				if lookupAS {
+					next.AS = asCache[addrString]
+				}
 			}
 			thisHops = append(thisHops, next)
 			isFinal = next.Final || isFinal
@@ -164,6 +174,7 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 type Hop struct {
 	Addr    net.Addr
 	Host    string
+	AS      int64
 	RTT     time.Duration
 	Final   bool
 	Timeout bool

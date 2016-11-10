@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	rawHops, err := tracelib.RunMultiTrace("homebeat.live", "0.0.0.0", time.Second, 64, 5)
+	rawHops, err := tracelib.RunMultiTrace("homebeat.live", "0.0.0.0", time.Second, 64, true, 5)
 
 	if nil != err {
 		fmt.Println("Traceroute error:", err)
@@ -18,9 +18,6 @@ func main() {
 	}
 
 	hops := tracelib.AggregateMulti(rawHops)
-
-	// b, _ := json.MarshalIndent(, "", "  ")
-	// fmt.Println(string(b))
 
 	for i, hop := range hops {
 		isd := fmt.Sprintf("%d. ", i+1)
@@ -32,9 +29,8 @@ func main() {
 				prefix = isp
 			}
 
-			fmt.Printf("%s%v(%s) %v/%v/%v (final:%v lost %d of %d)\n", prefix, h.Host, h.Addr, h.MinRTT, h.AvgRTT, h.MaxRTT, h.Final, h.Lost, h.Total)
+			fmt.Printf("%s%v(%s)/AS%d %v/%v/%v (final:%v lost %d of %d)\n", prefix, h.Host, h.Addr, h.AS, h.MinRTT, h.AvgRTT, h.MaxRTT, h.Final, h.Lost, h.Total)
 
 		}
-
 	}
 }
