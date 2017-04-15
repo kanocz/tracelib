@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -81,8 +82,31 @@ func AggregateMulti(hops [][]Hop) [][]MHop {
 
 }
 
+// LookupCache used to prevent AS-DNS requests for same hosts
+type LookupCache struct {
+	as     map[string]int64
+	aMutex sync.RWMutex
+	hosts  map[string]string
+	hMutex sync.RWMutex
+}
+
+// NewLookupCache constructor for LookupCache
+func NewLookupCache() *LookupCache {
+	return &LookupCache{
+		as:    make(map[string]int64, 1024),
+		hosts: make(map[string]string, 4096),
+	}
+}
+
 // LookupAS returns AS number for IP using origin.asn.cymru.com service
-func LookupAS(ip string) int64 {
+func (cache *LookupCache) LookupAS(ip string) int64 {
+	cache.aMutex.RLock()
+	v, exist := cache.as[ip]
+	cache.aMutex.RUnlock()
+	if exist {
+		return v
+	}
+
 	ipParts := strings.Split(ip, ".")
 	if len(ipParts) != 4 {
 		return -1
@@ -103,5 +127,32 @@ func LookupAS(ip string) int64 {
 		return -1
 	}
 
+	cache.aMutex.Lock()
+	cache.as[ip] = asnum
+	cache.aMutex.Unlock()
+
 	return asnum
+}
+
+// LookupHost returns AS number for IP using origin.asn.cymru.com service
+func (cache *LookupCache) LookupHost(ip string) string {
+	cache.hMutex.RLock()
+	v, exist := cache.hosts[ip]
+	cache.hMutex.RUnlock()
+	if exist {
+		return v
+	}
+
+	var result string
+
+	addrs, _ := net.LookupAddr(ip)
+	if len(addrs) > 0 {
+		result = addrs[0]
+	}
+
+	cache.hMutex.Lock()
+	cache.hosts[ip] = result
+	cache.hMutex.Unlock()
+
+	return result
 }

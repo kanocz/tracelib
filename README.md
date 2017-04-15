@@ -1,18 +1,19 @@
 # tracelib
 Traceroute implementation in go including mutli-round trace (returns min/max/avg/lost) and AS number detection.
 
-Usage example:
+Usage example (only IPs without hostnames and AS numbers):
 ```go
-hops, err := tracelib.RunTrace("google.com", "0.0.0.0", time.Second, 64, true)
+hops, err := tracelib.RunTrace("google.com", "0.0.0.0", time.Second, 64, nil)
 for i, hop := range hops {
 	fmt.Printf("%d. %v(%s)/AS%d %v (final:%v timeout:%v error:%v)\n",
       i+1, hop.Host, hop.Addr, hop.AS, hop.RTT, hop.Final, hop.Timeout, hop.Error)
 }
 ```
 
-And with multiply traces:
+Multiply traces with hostnames and AS numbers:
 ```go
-rawHops, err := tracelib.RunMultiTrace("homebeat.live", "0.0.0.0", time.Second, 64, true, 5)
+dnscache := tracelib.NewLookupCache()
+rawHops, err := tracelib.RunMultiTrace("homebeat.live", "0.0.0.0", time.Second, 64, dnscache, 5)
 
 hops := tracelib.AggregateMulti(rawHops)
 

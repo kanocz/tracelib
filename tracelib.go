@@ -29,7 +29,7 @@ type trace struct {
 }
 
 // RunTrace preforms traceroute to specified host
-func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, lookupAS bool) ([]Hop, error) {
+func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNScache *LookupCache) ([]Hop, error) {
 	hops := make([]Hop, 0, maxttl)
 
 	var res trace
@@ -72,12 +72,10 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, look
 	for i := 1; i <= maxttl; i++ {
 		next := res.Step(i)
 		if nil != next.Addr {
-			addrs, _ := net.LookupAddr(next.Addr.String())
-			if len(addrs) > 0 {
-				next.Host = addrs[0]
-			}
-			if lookupAS {
-				next.AS = LookupAS(next.Addr.String())
+			addrString := next.Addr.String()
+			if nil != DNScache {
+				next.Host = DNScache.LookupHost(addrString)
+				next.AS = DNScache.LookupAS(addrString)
 			}
 		}
 		hops = append(hops, next)
@@ -90,7 +88,7 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, look
 }
 
 // RunMultiTrace preforms traceroute to specified host testing each hop several times
-func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, lookupAS bool, rounds int) ([][]Hop, error) {
+func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, DNScache *LookupCache, rounds int) ([][]Hop, error) {
 	hops := make([][]Hop, 0, maxttl)
 
 	var res trace
@@ -130,9 +128,6 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 	res.ipv4conn = ipv4.NewPacketConn(res.conn)
 	defer res.ipv4conn.Close()
 
-	hostnameCache := map[string]string{}
-	asCache := map[string]int64{}
-
 	for i := 1; i <= maxttl; i++ {
 		thisHops := make([]Hop, 0, rounds)
 		isFinal := false
@@ -141,21 +136,9 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 			next := res.Step(i)
 			if nil != next.Addr {
 				addrString := next.Addr.String()
-				if _, ok := hostnameCache[addrString]; !ok {
-					addrs, _ := net.LookupAddr(addrString)
-					if len(addrs) > 0 {
-						hostnameCache[addrString] = addrs[0]
-					} else {
-						hostnameCache[addrString] = ""
-					}
-					if lookupAS {
-						asCache[addrString] = LookupAS(addrString)
-					}
-				}
-
-				next.Host = hostnameCache[addrString]
-				if lookupAS {
-					next.AS = asCache[addrString]
+				if nil != DNScache {
+					next.Host = DNScache.LookupHost(addrString)
+					next.AS = DNScache.LookupAS(addrString)
 				}
 			}
 			thisHops = append(thisHops, next)
