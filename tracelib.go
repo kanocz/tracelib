@@ -14,6 +14,9 @@ import (
 const (
 	// ProtocolICMP icmp protocol id
 	ProtocolICMP = 1
+
+	// MaxTimeouts sets number of hops without replay before trace termination
+	MaxTimeouts = 3
 )
 
 // trace struct represents handles connections and info for trace
@@ -69,6 +72,7 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNSc
 	res.ipv4conn = ipv4.NewPacketConn(res.conn)
 	defer res.ipv4conn.Close()
 
+	timeouts := 0
 	for i := 1; i <= maxttl; i++ {
 		next := res.Step(i)
 		if nil != next.Addr {
@@ -80,6 +84,14 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNSc
 		}
 		hops = append(hops, next)
 		if next.Final {
+			break
+		}
+		if next.Timeout {
+			timeouts++
+		} else {
+			timeouts = 0
+		}
+		if timeouts == MaxTimeouts {
 			break
 		}
 	}
@@ -128,10 +140,12 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 	res.ipv4conn = ipv4.NewPacketConn(res.conn)
 	defer res.ipv4conn.Close()
 
+	timeouts := 0
 	for i := 1; i <= maxttl; i++ {
 		thisHops := make([]Hop, 0, rounds)
 		isFinal := false
 
+		notimeout := true
 		for j := 0; j < rounds; j++ {
 			next := res.Step(i)
 			if nil != next.Addr {
@@ -143,9 +157,19 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 			}
 			thisHops = append(thisHops, next)
 			isFinal = next.Final || isFinal
+			notimeout = notimeout && (!next.Timeout)
 		}
 		hops = append(hops, thisHops)
 		if isFinal {
+			break
+		}
+		if notimeout {
+			timeouts = 0
+		} else {
+			timeouts++
+		}
+
+		if timeouts == MaxTimeouts {
 			break
 		}
 	}
