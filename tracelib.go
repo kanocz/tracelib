@@ -31,8 +31,11 @@ type trace struct {
 	dest     net.Addr
 }
 
+// Callback function called after every hop received
+type Callback func(info Hop, hopnum int, round int)
+
 // RunTrace preforms traceroute to specified host
-func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNScache *LookupCache) ([]Hop, error) {
+func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNScache *LookupCache, cb Callback) ([]Hop, error) {
 	hops := make([]Hop, 0, maxttl)
 
 	var res trace
@@ -82,6 +85,9 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNSc
 				next.AS = DNScache.LookupAS(addrString)
 			}
 		}
+		if nil != cb {
+			cb(next, i, 1)
+		}
 		hops = append(hops, next)
 		if next.Final {
 			break
@@ -100,7 +106,7 @@ func RunTrace(host string, source string, maxrtt time.Duration, maxttl int, DNSc
 }
 
 // RunMultiTrace preforms traceroute to specified host testing each hop several times
-func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, DNScache *LookupCache, rounds int) ([][]Hop, error) {
+func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int, DNScache *LookupCache, rounds int, cb Callback) ([][]Hop, error) {
 	hops := make([][]Hop, 0, maxttl)
 
 	var res trace
@@ -154,6 +160,9 @@ func RunMultiTrace(host string, source string, maxrtt time.Duration, maxttl int,
 					next.Host = DNScache.LookupHost(addrString)
 					next.AS = DNScache.LookupAS(addrString)
 				}
+			}
+			if nil != cb {
+				cb(next, i, j+1)
 			}
 			thisHops = append(thisHops, next)
 			isFinal = next.Final || isFinal

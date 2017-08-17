@@ -20,8 +20,9 @@ type mtrhHost struct {
 }
 
 func doTrace(host string) ([]byte, error) {
+	cache := tracelib.NewLookupCache()
 
-	rawHops, err := tracelib.RunMultiTrace(host, "0.0.0.0", time.Second, 64, true, 10)
+	rawHops, err := tracelib.RunMultiTrace(host, "0.0.0.0", time.Second, 64, cache, 10, nil)
 	if nil != err {
 		return nil, err
 	}
