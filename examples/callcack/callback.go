@@ -15,7 +15,7 @@ func main() {
 	cache := tracelib.NewLookupCache()
 
 	fmt.Println("Single round trace")
-	_, err := tracelib.RunTrace("google.com", "0.0.0.0", time.Second, 64, cache, printStep)
+	_, err := tracelib.RunTrace("google.com", "0.0.0.0", "::", time.Second, 64, cache, printStep)
 
 	if nil != err {
 		fmt.Println("Traceroute error:", err)
@@ -23,7 +23,7 @@ func main() {
 	}
 
 	fmt.Println("Multi round trace")
-	_, err = tracelib.RunMultiTrace("google.com", "0.0.0.0", time.Second, 64, cache, 3, printStep)
+	_, err = tracelib.RunMultiTrace("google.com", "0.0.0.0", "::", time.Second, 64, cache, 3, printStep)
 
 	if nil != err {
 		fmt.Println("Traceroute error:", err)

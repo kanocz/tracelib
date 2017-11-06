@@ -12,7 +12,7 @@ import (
 func main() {
 	cache := tracelib.NewLookupCache()
 
-	rawHops, err := tracelib.RunMultiTrace("homebeat.live", "0.0.0.0", time.Second, 64, cache, 10, nil)
+	rawHops, err := tracelib.RunMultiTrace("homebeat.live", "0.0.0.0", "::", time.Second, 64, cache, 10, nil)
 
 	if nil != err {
 		fmt.Println("Traceroute error:", err)

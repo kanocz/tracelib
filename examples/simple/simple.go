@@ -10,7 +10,7 @@ import (
 func main() {
 	cache := tracelib.NewLookupCache()
 
-	hops, err := tracelib.RunTrace("google.com", "0.0.0.0", time.Second, 64, cache, nil)
+	hops, err := tracelib.RunTrace("google.com", "0.0.0.0", "::", time.Second, 64, cache, nil)
 
 	if nil != err {
 		fmt.Println("Traceroute error:", err)

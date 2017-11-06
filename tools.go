@@ -1,6 +1,7 @@
 package tracelib
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strconv"
@@ -108,11 +109,50 @@ func (cache *LookupCache) LookupAS(ip string) int64 {
 	}
 
 	ipParts := strings.Split(ip, ".")
-	if len(ipParts) != 4 {
+	if len(ipParts) == 4 {
+		return cache.lookupAS4(ip, ipParts)
+	}
+
+	return cache.lookupAS6(ip)
+}
+
+func (cache *LookupCache) lookupAS4(ip string, ipParts []string) int64 {
+
+	txts, err := net.LookupTXT(fmt.Sprintf("%s.%s.%s.%s.origin.asn.cymru.com", ipParts[3], ipParts[2], ipParts[1], ipParts[0]))
+	if nil != err || nil == txts || len(txts) < 1 {
 		return -1
 	}
 
-	txts, err := net.LookupTXT(fmt.Sprintf("%s.%s.%s.%s.origin.asn.cymru.com", ipParts[3], ipParts[2], ipParts[1], ipParts[0]))
+	parts := strings.Split(txts[0], " | ")
+	if len(parts) < 2 {
+		return -1
+	}
+
+	asnum, err := strconv.ParseInt(parts[0], 10, 64)
+	if nil != err {
+		return -1
+	}
+
+	cache.aMutex.Lock()
+	cache.as[ip] = asnum
+	cache.aMutex.Unlock()
+
+	return asnum
+}
+
+func (cache *LookupCache) lookupAS6(ip string) int64 {
+
+	i6 := net.ParseIP(ip)
+	if len(i6) != 16 {
+		return -1
+	}
+
+	hexIP := ""
+	for _, v := range hex.EncodeToString([]byte(i6)) {
+		hexIP = string(v) + "." + hexIP
+	}
+
+	txts, err := net.LookupTXT(hexIP + "origin6.asn.cymru.com")
 	if nil != err || nil == txts || len(txts) < 1 {
 		return -1
 	}
