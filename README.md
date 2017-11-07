@@ -1,5 +1,5 @@
 # tracelib
-Traceroute implementation in go including mutli-round trace (returns min/max/avg/lost) and AS number detection.
+Traceroute implementation in go including mutli-round trace (returns min/max/avg/lost) and AS number detection both for IPv4 and IPv6.
 
 Usage example (only IPs without hostnames and AS numbers):
 ```go
