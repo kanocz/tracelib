@@ -32,7 +32,7 @@ func main() {
 			}
 
 			if nil != h.Addr {
-				fmt.Printf("%s%v(%s)/AS%d %v/%v/%v (final:%v lost %d of %d)\n", prefix, h.Host, h.Addr, h.AS, h.MinRTT, h.AvgRTT, h.MaxRTT, h.Final, h.Lost, h.Total)
+				fmt.Printf("%s%v(%s)/AS%d %v/%v/%v (final:%v lost %d of %d, down %d of %d)\n", prefix, h.Host, h.Addr, h.AS, h.MinRTT, h.AvgRTT, h.MaxRTT, h.Final, h.Lost, h.Total, h.Down, h.Total)
 			} else {
 				fmt.Printf("%s Lost: %d\n", prefix, h.Lost)
 			}

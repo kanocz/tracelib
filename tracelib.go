@@ -105,6 +105,7 @@ func RunTrace(host string, source string, source6 string, maxrtt time.Duration, 
 		f.SetAll(true)
 		f.Accept(ipv6.ICMPTypeTimeExceeded)
 		f.Accept(ipv6.ICMPTypeEchoReply)
+		f.Accept(ipv6.ICMPTypeDestinationUnreachable)
 		if err := res.ipv6conn.SetICMPFilter(&f); err != nil {
 			return nil, err
 		}
@@ -266,6 +267,7 @@ type Hop struct {
 	RTT     time.Duration
 	Final   bool
 	Timeout bool
+	Down    bool
 	Error   error
 }
 
@@ -364,6 +366,22 @@ func (t *trace) Step(ttl int) Hop {
 					continue
 				}
 				hop.Final = true
+				return hop
+			}
+		case ipv6.ICMPTypeDestinationUnreachable:
+			if rply, ok := result.Body.(*icmp.Echo); ok {
+				if t.id != rply.ID {
+					continue
+				}
+				hop.Down = true
+				return hop
+			}
+		case ipv4.ICMPTypeDestinationUnreachable:
+			if rply, ok := result.Body.(*icmp.Echo); ok {
+				if t.id != rply.ID {
+					continue
+				}
+				hop.Down = true
 				return hop
 			}
 		}

@@ -8,7 +8,7 @@ import (
 )
 
 func printStep(hop tracelib.Hop, num int, round int) {
-	fmt.Printf("%d.(%d) %v(%s)/AS%d %v (final:%v timeout:%v error:%v)\n", num, round, hop.Host, hop.Addr, hop.AS, hop.RTT, hop.Final, hop.Timeout, hop.Error)
+	fmt.Printf("%d.(%d) %v(%s)/AS%d %v (final:%v timeout:%v error:%v down:%v)\n", num, round, hop.Host, hop.Addr, hop.AS, hop.RTT, hop.Final, hop.Timeout, hop.Error, hop.Down)
 }
 
 func main() {

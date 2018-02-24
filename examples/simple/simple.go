@@ -18,6 +18,6 @@ func main() {
 	}
 
 	for i, hop := range hops {
-		fmt.Printf("%d. %v(%s)/AS%d %v (final:%v timeout:%v error:%v)\n", i+1, hop.Host, hop.Addr, hop.AS, hop.RTT, hop.Final, hop.Timeout, hop.Error)
+		fmt.Printf("%d. %v(%s)/AS%d %v (final:%v timeout:%v error:%v down:%v)\n", i+1, hop.Host, hop.Addr, hop.AS, hop.RTT, hop.Final, hop.Timeout, hop.Error, hop.Down)
 	}
 }

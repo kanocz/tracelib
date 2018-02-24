@@ -20,6 +20,7 @@ type MHop struct {
 	AvgRTT time.Duration
 	Total  int
 	Lost   int
+	Down   int
 	Final  bool
 }
 
@@ -53,9 +54,13 @@ func AggregateMulti(hops [][]Hop) [][]MHop {
 			}
 
 			mhop.Total++
-			if h.Timeout || nil != h.Error {
+
+			switch {
+			case h.Down:
+				mhop.Down++
+			case h.Timeout || nil != h.Error:
 				mhop.Lost++
-			} else {
+			default:
 				timesum[addrstring] += h.RTT
 				if mhop.MaxRTT < h.RTT {
 					mhop.MaxRTT = h.RTT
@@ -64,6 +69,7 @@ func AggregateMulti(hops [][]Hop) [][]MHop {
 					mhop.MinRTT = h.RTT
 				}
 			}
+
 			mhop.Final = mhop.Final || h.Final
 			if mhop.Total > mhop.Lost {
 				mhop.AvgRTT = timesum[addrstring] / time.Duration(mhop.Total-mhop.Lost)
