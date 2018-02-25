@@ -1,7 +1,7 @@
 # tracelib
-Traceroute implementation in go including mutli-round trace (returns min/max/avg/lost) and AS number detection both for IPv4 and IPv6.
+Traceroute implementation in go including mutli-round trace (returns min/max/avg/lost) and AS number detection both for IPv4 and IPv6. Also expremental implementation of much faster traceroute present (it sends all packets with all possible TTLs at once and total tracroute time is always the same as MaxRTT), look at examples/parallel for more info.
 
-Usage example (only IPs without hostnames and AS numbers):
+Usage example of regular traceroute (only IPs without hostnames and AS numbers):
 ```go
 hops, err := tracelib.RunTrace("google.com", "0.0.0.0", time.Second, 64, nil)
 for i, hop := range hops {
