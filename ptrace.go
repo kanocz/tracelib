@@ -15,7 +15,7 @@ import (
 // by sending all packets not one after another but at once
 
 // RunPTrace preforms traceroute to specified host by sending all packets at once
-func RunPTrace(host string, source string, source6 string, maxrtt time.Duration, maxttl int, DNScache *LookupCache, rounds int, icmpID int) ([][]Hop, error) {
+func RunPTrace(host string, source string, source6 string, maxrtt time.Duration, maxttl int, DNScache *LookupCache, rounds int, icmpID int, delay time.Duration) ([][]Hop, error) {
 
 	hops := make([][]Hop, maxttl)
 	sendOn := make([][]time.Time, maxttl)
@@ -138,6 +138,10 @@ func RunPTrace(host string, source string, source6 string, maxrtt time.Duration,
 				if nil != ipv6conn {
 					_, hops[hop][r].Error = ipv6conn.WriteTo(netmsg, &wcm, dest)
 				}
+
+				if 0 != delay {
+					time.Sleep(delay)
+				}
 			}
 		}
 	}()
@@ -145,7 +149,7 @@ func RunPTrace(host string, source string, source6 string, maxrtt time.Duration,
 	buf := make([]byte, 1500)
 	maxSeq := rounds * maxttl
 
-	for mtime := time.Now().Add(maxrtt); time.Now().Before(mtime); {
+	for mtime := time.Now().Add(maxrtt + (delay * time.Duration(maxSeq))); time.Now().Before(mtime); {
 		conn.SetReadDeadline(mtime)
 
 		readLen, addr, err := conn.ReadFrom(buf)

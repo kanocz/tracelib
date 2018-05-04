@@ -11,8 +11,8 @@ import (
 func main() {
 	cache := tracelib.NewLookupCache()
 
-	rawHops, err := tracelib.RunPTrace("ttc.ca", "0.0.0.0", "::", time.Second, 32, cache, 10, 100)
-	//	rawHops, err := tracelib.RunPTrace("homebeat.live", "0.0.0.0", "::", time.Second, 32, cache, 10, 100)
+	rawHops, err := tracelib.RunPTrace("ttc.ca", "0.0.0.0", "::", time.Second, 32, cache, 10, 100, time.Millisecond)
+	//	rawHops, err := tracelib.RunPTrace("homebeat.live", "0.0.0.0", "::", time.Second, 32, cache, 10, 100, 0, time.Millisecond)
 
 	if nil != err {
 		fmt.Println("Traceroute error:", err)
