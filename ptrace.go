@@ -147,7 +147,7 @@ func RunPTrace(host string, source string, source6 string, maxrtt time.Duration,
 	}()
 
 	buf := make([]byte, 1500)
-	maxSeq := rounds * maxttl
+	maxSeq := rounds*maxttl - 1
 
 	for mtime := time.Now().Add(maxrtt + (delay * time.Duration(maxSeq))); time.Now().Before(mtime); {
 		conn.SetReadDeadline(mtime)
